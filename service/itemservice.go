@@ -11,17 +11,14 @@ type ItemService interface {
 	EditItem(changer entity.ItemChanger) (entity.Item, error)
 	DeleteItem(id int) error
 
-	FindItemWithID(id int) (entity.Item, error)
-	FindItemWithName(name string) (entity.Item, error)
-	FindItemWithRarity(rarity string) ([]entity.Item, error)
-	FindItemWithPrice(hprice int, lprice int) ([]entity.Item, error)
+	FindItem(item entity.ItemFinder) ([]entity.Item, error)
 }
 
 func (s *service) AddItem(item entity.Item) (entity.Item, error) {
-	item, err := s.repo.FindItemWithName(item.Name)
+	result, err := s.repo.FindItemWithName(item.Name)
 	if err == nil {
 		err = fmt.Errorf("item already exists")
-		return item, err
+		return result, err
 	} else if !errors.Is(err, ErrNotFound) {
 		return entity.Item{}, err
 	}
@@ -40,17 +37,46 @@ func (s *service) DeleteItem(id int) error {
 	return s.repo.DeleteItem(id)
 }
 
-func (s *service) FindItemWithID(id int) (entity.Item, error) {
-	return s.repo.FindItemWithID(id)
-}
-func (s *service) FindItemWithName(name string) (entity.Item, error) {
-	return s.repo.FindItemWithName(name)
+func (s *service) FindItem(item entity.ItemFinder) ([]entity.Item, error) {
+	var result []entity.Item
 
-}
-func (s *service) FindItemWithRarity(rarity string) ([]entity.Item, error) {
-	return s.repo.FindItemWithRarity(rarity)
+	if item.Name != nil {
+		res, err := s.repo.FindItemWithName(*item.Name)
+		if err != nil {
+			return nil, err
+		}
 
-}
-func (s *service) FindItemWithPrice(lprice int, hprice int) ([]entity.Item, error) {
-	return s.repo.FindItemWithPrice(lprice, hprice)
+		result = append(result, res)
+		return result, nil
+	}
+
+	if item.Rarity != nil {
+		result, err := s.repo.FindItemWithRarity(*item.Rarity)
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
+	}
+
+	if item.ID != nil {
+		res, err := s.repo.FindItemWithID(*item.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, res)
+		return result, nil
+	}
+
+	if item.LowestPrice != nil && item.HighestPrice != nil {
+		result, err := s.repo.FindItemWithPrice(*item.LowestPrice, *item.HighestPrice)
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
+	}
+
+	return nil, nil
 }

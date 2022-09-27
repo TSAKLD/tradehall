@@ -11,14 +11,15 @@ const (
 	Immortal  Rarity = "Immortal"
 	Arcana    Rarity = "Arcana"
 	Ancient   Rarity = "Ancient"
+	Persona   Rarity = "Persona"
 )
 
 type Item struct {
-	ID      int
-	Name    string
-	Rarity  Rarity
-	ForHero string
-	Cost    int
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Rarity  Rarity `json:"rarity"`
+	ForHero string `json:"hero"`
+	Cost    int    `json:"cost,"`
 }
 
 type ItemChanger struct {
@@ -29,6 +30,7 @@ type ItemChanger struct {
 }
 
 type ItemFinder struct {
+	ID           *int
 	Name         *string
 	Rarity       *string
 	Hero         *string

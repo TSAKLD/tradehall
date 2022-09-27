@@ -33,6 +33,8 @@ func (s *Server) setRoutes(userServ service.UserService, itemServ service.ItemSe
 
 	//Routes for Admins
 	s.router.HandleFunc("/items", hand.AddItem).Methods(http.MethodPost)
+	s.router.HandleFunc("/items", hand.FindItem).Methods(http.MethodGet)
+	s.router.HandleFunc("/items", hand.DeleteItem).Methods(http.MethodDelete)
 }
 
 // Start is just starting http server.

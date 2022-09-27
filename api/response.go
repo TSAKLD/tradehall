@@ -18,14 +18,11 @@ func sendError(w http.ResponseWriter, err error, statusCode int) {
 
 	err = json.NewEncoder(w).Encode(Error{Error: err.Error()})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
 	}
 }
 
-func sendResponse(w http.ResponseWriter, statusCode int, v ...interface{}) {
-	w.WriteHeader(statusCode)
-
+func sendResponse(w http.ResponseWriter, v ...interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 
 	err := json.NewEncoder(w).Encode(v)

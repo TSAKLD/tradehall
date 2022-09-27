@@ -47,6 +47,8 @@ func (s *service) RegisterUser(user entity.User) (entity.User, error) {
 		return user, err
 	}
 
+	user.Status = entity.StatusCommonUser
+
 	user, err = s.repo.CreateUser(user)
 	if err != nil {
 		return user, err
@@ -59,24 +61,28 @@ func (s *service) FindUser(user entity.UserForFind) (result entity.User, err err
 	if user.ID != nil {
 		result, err := s.repo.FindWithID(*user.ID)
 		if err != nil {
-			return result, err
+			return entity.User{}, err
 		}
+
+		return result, nil
 	}
 
 	if user.Nickname != nil {
 		result, err := s.repo.FindWithNickname(*user.Nickname)
 		if err != nil {
-			return result, err
+			return entity.User{}, err
 		}
 
+		return result, nil
 	}
 
 	if user.Email != nil {
 		result, err := s.repo.FindWithEmail(*user.Email)
 		if err != nil {
-			return result, err
+			return entity.User{}, err
 		}
 
+		return result, nil
 	}
 
 	return result, nil

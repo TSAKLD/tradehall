@@ -21,9 +21,10 @@ func New(database *sql.DB) *Repository {
 //USER FUNCTIONS
 
 func (r *Repository) CreateUser(user entity.User) (entity.User, error) {
-	q := "INSERT INTO users(nickname, email, age, status) values $1, $2, $3, $4 RETURNING id, nickname, email, age, status"
+	q := "INSERT INTO users(nickname, email, age, status, inviter) values($1, $2, $3, $4, $5) RETURNING id, nickname, email, age, status"
 
-	err := r.db.QueryRow(q, user.Nickname, user.Nickname, user.Age, user.Status).Scan(&user)
+	err := r.db.QueryRow(q, user.Nickname, user.Email, user.Age, user.Status, user.Inviter).
+		Scan(&user.ID, &user.Nickname, &user.Email, &user.Age, &user.Status)
 	if err != nil {
 		return user, err
 	}
@@ -36,7 +37,7 @@ func (r *Repository) FindWithNickname(nickname string) (entity.User, error) {
 
 	q := "SELECT id, nickname, status FROM users WHERE nickname = $1"
 
-	err := r.db.QueryRow(q, nickname).Scan(&user)
+	err := r.db.QueryRow(q, nickname).Scan(&user.ID, &user.Nickname, &user.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return user, fmt.Errorf("%w: user nickname %v", service.ErrNotFound, nickname)
@@ -53,7 +54,7 @@ func (r *Repository) FindWithEmail(email string) (entity.User, error) {
 
 	q := "SELECT id, nickname, status FROM users WHERE email = $1"
 
-	err := r.db.QueryRow(q, email).Scan(&user)
+	err := r.db.QueryRow(q, email).Scan(&user.ID, &user.Nickname, &user.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return user, fmt.Errorf("%w: user email %v", service.ErrNotFound, email)
@@ -70,7 +71,7 @@ func (r *Repository) FindWithID(id int) (entity.User, error) {
 
 	q := "SELECT id, nickname, status FROM users WHERE id = $1"
 
-	err := r.db.QueryRow(q, id).Scan(&user)
+	err := r.db.QueryRow(q, id).Scan(&user.ID, &user.Nickname, &user.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return user, fmt.Errorf("%w: user id %v", service.ErrNotFound, id)
@@ -96,9 +97,12 @@ func (r *Repository) RemoveUser(id int) error {
 //ITEM FUNCTIONS
 
 func (r *Repository) AddItem(item entity.Item) (entity.Item, error) {
-	q := "INSERT INTO items(name, rarity, hero, cost) values $1, $2, $3, $4 RETURNING id, rarity, hero, cost"
+	q := "INSERT INTO items(name, rarity, hero, cost) values($1, $2, $3, $4) RETURNING id, name, rarity, hero, cost"
 
-	err := r.db.QueryRow(q, item.Name, item.Rarity, item.ForHero, item.Cost).Scan(&item)
+	fmt.Println("2")
+	err := r.db.QueryRow(q, item.Name, item.Rarity, item.ForHero, item.Cost).
+		Scan(&item.ID, &item.Name, &item.Rarity, &item.ForHero, &item.Cost)
+	fmt.Println("3")
 	if err != nil {
 		return entity.Item{}, err
 	}
@@ -128,7 +132,8 @@ func (r *Repository) FindItemWithName(name string) (entity.Item, error) {
 
 	q := "SELECT id, name, rarity, hero, cost FROM items WHERE name = $1"
 
-	err := r.db.QueryRow(q, name).Scan(&item)
+	err := r.db.QueryRow(q, name).
+		Scan(&item.ID, &item.Name, &item.Rarity, &item.ForHero, &item.Cost)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return item, fmt.Errorf("%w: item name: %v", service.ErrNotFound, name)
@@ -146,7 +151,7 @@ func (r *Repository) FindItemWithRarity(rarity string) ([]entity.Item, error) {
 
 	q := "SELECT id, name, rarity, hero, cost FROM items WHERE rarity = $1"
 
-	result, err := r.db.Query(q, rarity)
+	rows, err := r.db.Query(q, rarity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("%w: item rarity: %v", service.ErrNotFound, rarity)
@@ -154,9 +159,10 @@ func (r *Repository) FindItemWithRarity(rarity string) ([]entity.Item, error) {
 
 		return nil, err
 	}
-	defer result.Close()
+	defer rows.Close()
 
-	for result.Next() {
+	for rows.Next() {
+		rows.Scan(&item.ID, &item.Name, &item.Rarity, &item.ForHero, &item.Cost)
 		itemList = append(itemList, item)
 	}
 
@@ -180,6 +186,7 @@ func (r *Repository) FindItemWithPrice(hprice int, lprice int) ([]entity.Item, e
 	defer rows.Close()
 
 	for rows.Next() {
+		rows.Scan(&item.ID, &item.Name, &item.Rarity, &item.ForHero, &item.Cost)
 		list = append(list, item)
 	}
 
@@ -191,7 +198,7 @@ func (r *Repository) EditItem(changer entity.ItemChanger) (entity.Item, error) {
 }
 
 func (r *Repository) DeleteItem(id int) error {
-	q := "DELETE FROM items * WHERE id = $1"
+	q := "DELETE * FROM items WHERE id = $1"
 
 	_, err := r.db.Exec(q, id)
 
